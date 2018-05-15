@@ -1,0 +1,8 @@
+INSERT INTO `users`(`id`, `birthdate`, `email`, `password`, `state`, `user_name`) VALUES (1, null ,'phong@ngo.vn','821f498d827d4edad2ed0960408a98edceb661d9f34287ceda2962417881231a','ACTIVE','phongngo');
+INSERT INTO `roles`(`id`, `description`, `role_name`) VALUES (1,'ADMIN','ADMIN');
+INSERT INTO `user_role`(`user_id`, `role_id`) VALUES (1,1);
+
+
+INSERT INTO `users`(`id`, `birthdate`, `email`, `password`, `state`, `user_name`) VALUES (2, null ,'phong@ngo.vn','821f498d827d4edad2ed0960408a98edceb661d9f34287ceda2962417881231a','ACTIVE','user1');
+INSERT INTO `roles`(`id`, `description`, `role_name`) VALUES (2,'USER','USER');
+INSERT INTO `user_role`(`user_id`, `role_id`) VALUES (2,2);
