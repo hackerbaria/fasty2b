@@ -18,15 +18,16 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.google.api.client.googleapis.json.GoogleJsonResponseException;
+import com.google.api.services.youtube.model.PlaylistListResponse;
 import com.fasty2b.youtube.dto.DescriptionSetting;
 import com.fasty2b.youtube.dto.GeneralSetting;
 import com.fasty2b.youtube.dto.InsertVideoSetting;
+import com.fasty2b.youtube.dto.MultiPlayListInfoDTO;
+import com.fasty2b.youtube.dto.PlayListInfoDTO;
+import com.fasty2b.youtube.dto.ResponseDTO;
 import com.fasty2b.youtube.dto.SearchVideoSetting;
+import com.fasty2b.youtube.dto.SinglePlayListInfoDTO;
 import com.fasty2b.youtube.dto.TitleSetting;
-import com.fasty2b.youtube.entity.MultiPlayListInfoEntity;
-import com.fasty2b.youtube.entity.PlayListInfoEntity;
-import com.fasty2b.youtube.entity.ResponseEntity;
-import com.fasty2b.youtube.entity.SinglePlayListInfoEntity;
 import com.fasty2b.youtube.service.PlaylistService;
 import com.fasty2b.youtube.utils.Constants;
 
@@ -37,7 +38,7 @@ public class PlaylistController {
 	private static final Logger logger = LogManager.getLogger(PlaylistController.class);
 
 	@Autowired
-	private PlaylistService playlistUpdatesService;
+	private PlaylistService playlistService;
 
 	@RequestMapping("*/")
 	public String welcome() {
@@ -50,14 +51,14 @@ public class PlaylistController {
 	}
 
 	@RequestMapping(method = RequestMethod.POST, value = "/addSinglePlaylist")
-	public ResponseEntity<PlayListInfoEntity> addSinglePlaylist(@RequestBody SinglePlayListInfoEntity playlistInfo) {
-		ResponseEntity<PlayListInfoEntity> responseEntity = new ResponseEntity<PlayListInfoEntity>(Constants.ERROR_CODE,
+	public ResponseDTO<PlayListInfoDTO> addSinglePlaylist(@RequestBody SinglePlayListInfoDTO playlistInfo) {
+		ResponseDTO<PlayListInfoDTO> responseEntity = new ResponseDTO<PlayListInfoDTO>(Constants.ERROR_CODE,
 				"", null);
 		System.out.println("start addMultiPlaylist");
 		System.out.println("input from UI: " + playlistInfo);
 
 		String keyword = playlistInfo.getName();
-		PlayListInfoEntity playListInfoEntity = new PlayListInfoEntity();
+		PlayListInfoDTO playListInfoEntity = new PlayListInfoDTO();
 		playListInfoEntity.setChanel(playlistInfo.getChanel());
 		SearchVideoSetting searchVideoSetting = playlistInfo.getSearchVideoSetting();
 		TitleSetting titleSetting = playlistInfo.getTitleSetting();
@@ -70,7 +71,7 @@ public class PlaylistController {
 		keyword = WordUtils.capitalize(keyword);
 		playListInfoEntity.setTitle(keyword);
 		try {
-			PlayListInfoEntity pll = playlistUpdatesService.createPlayListAndAddVideos(playListInfoEntity,
+			PlayListInfoDTO pll = playlistService.createPlayListAndAddVideos(playListInfoEntity,
 					searchVideoSetting, titleSetting, descriptionSetting, generalSetting, insertVideoSetting);
 
 			responseEntity.setCode(Constants.SUCCESS_CODE);
@@ -93,15 +94,15 @@ public class PlaylistController {
 	}
 
 	@RequestMapping(method = RequestMethod.POST, value = "/addMultiPlaylist")
-	public ResponseEntity<List<PlayListInfoEntity>> addMultiPlaylist(@RequestBody MultiPlayListInfoEntity playlistInfo)
+	public ResponseDTO<List<PlayListInfoDTO>> addMultiPlaylist(@RequestBody MultiPlayListInfoDTO playlistInfo)
 			throws InterruptedException {
-		ResponseEntity<List<PlayListInfoEntity>> responseEntity = new ResponseEntity<List<PlayListInfoEntity>>(
+		ResponseDTO<List<PlayListInfoDTO>> responseEntity = new ResponseDTO<List<PlayListInfoDTO>>(
 				Constants.ERROR_CODE, "", null);
 		System.out.println("start addMultiPlaylist");
 		System.out.println("input from UI: " + playlistInfo);
 
 		List<String> keywords = playlistInfo.getNames();
-		PlayListInfoEntity playListInfoEntity = new PlayListInfoEntity();
+		PlayListInfoDTO playListInfoEntity = new PlayListInfoDTO();
 		playListInfoEntity.setChanel(playlistInfo.getChanel());
 		SearchVideoSetting searchVideoSetting = playlistInfo.getSearchVideoSetting();
 		/*if (searchVideoSetting.getMaxResults() > 25) {
@@ -113,7 +114,7 @@ public class PlaylistController {
 		GeneralSetting generalSetting = playlistInfo.getGeneralSetting();
 		InsertVideoSetting insertVideoSetting = playlistInfo.getInsertVideoSetting();
 
-		List<PlayListInfoEntity> playLists = new ArrayList<>();
+		List<PlayListInfoDTO> playLists = new ArrayList<>();
 
 		try {
 			for (String keyword : keywords) {
@@ -121,7 +122,7 @@ public class PlaylistController {
 				keyword = StringUtils.trim(keyword);
 				keyword = WordUtils.capitalize(keyword);
 				playListInfoEntity.setTitle(keyword);
-				PlayListInfoEntity pll = playlistUpdatesService.createPlayListAndAddVideos(playListInfoEntity,
+				PlayListInfoDTO pll = playlistService.createPlayListAndAddVideos(playListInfoEntity,
 						searchVideoSetting, titleSetting, descriptionSetting, generalSetting, insertVideoSetting);
 				playLists.add(pll);
 				System.out.println("finished creating pll " + keyword);
@@ -150,5 +151,35 @@ public class PlaylistController {
 		return responseEntity;
 
 	}
+	
+	@RequestMapping(method = RequestMethod.GET, value = "/getPlaylistsListByChannelId")
+	public ResponseDTO<PlaylistListResponse> getPlaylistsListByChannelId(@RequestParam("channelId") String channelId, 
+			@RequestParam("maxResults") Long maxResults)
+			throws InterruptedException {
+		ResponseDTO<PlaylistListResponse> responseEntity = new ResponseDTO<PlaylistListResponse>(
+				Constants.ERROR_CODE, "", null);		
+		try {
+			PlaylistListResponse playlists = new PlaylistListResponse();
+			playlists = playlistService.getPlaylistsListByChannelId(channelId, maxResults);
+			responseEntity.setCode(Constants.SUCCESS_CODE);
+			responseEntity.setData(playlists);
+
+		} catch (GoogleJsonResponseException e) {
+			responseEntity.setCode(e.getStatusCode());
+			responseEntity.setMessage(e.getMessage());
+			System.out.println(e.getMessage());
+		} catch (IOException e) {
+			responseEntity.setCode(Constants.ERROR_CODE);
+			responseEntity.setMessage(e.getMessage());
+			System.out.println(e.getMessage());
+		} catch (Throwable t) {
+			responseEntity.setCode(Constants.ERROR_CODE);
+			responseEntity.setMessage(t.getMessage());
+			System.out.println(t.getMessage());
+		}
+		return responseEntity;
+
+	}
+	
 
 }

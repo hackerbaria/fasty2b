@@ -51,7 +51,7 @@ public class Auth {
 		GoogleCredential credential = new GoogleCredential();
 
 		String channel = channelID;
-		Token token = tokenService.getTokenByUserId(channel);
+		Token token = tokenService.getTokenByChannelId(channel);
 
 		Reader clientSecretReader = new InputStreamReader(Auth.class.getResourceAsStream("/client_secrets.json"));
 		GoogleClientSecrets clientSecrets = GoogleClientSecrets.load(Auth.JSON_FACTORY, clientSecretReader);
@@ -65,7 +65,7 @@ public class Auth {
 			String refreshToken = tokenResponse.getRefreshToken();
 
 			Token newToken = new Token();
-			newToken.setUserId(channel);
+			newToken.setChannelId(channel);
 			newToken.setAccessToken(accessToken);
 			newToken.setRefreshToken(refreshToken);
 			tokenService.addToken(newToken);

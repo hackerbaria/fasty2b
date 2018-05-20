@@ -7,7 +7,7 @@ import com.fasty2b.youtube.entity.Token;
 
 
 public interface TokenRepository extends CrudRepository<Token, Long>  {
-	Token findByUserId(String userId);	
+	Token findByChannelId(String channelId);	
 	Token findByAccessToken(String accessToken);
     
 }

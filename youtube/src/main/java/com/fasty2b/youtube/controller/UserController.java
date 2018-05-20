@@ -14,8 +14,9 @@ import org.springframework.web.client.HttpClientErrorException;
 import com.google.api.client.auth.oauth2.TokenResponseException;
 import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.fasty2b.youtube.dto.AuthDTO;
+import com.fasty2b.youtube.dto.ChannelInfo;
+import com.fasty2b.youtube.dto.ResponseDTO;
 import com.fasty2b.youtube.dto.UserInfo;
-import com.fasty2b.youtube.entity.ResponseEntity;
 import com.fasty2b.youtube.entity.User;
 import com.fasty2b.youtube.service.IUserService;
 import com.fasty2b.youtube.service.PlaylistService;
@@ -32,17 +33,17 @@ public class UserController {
 	private PlaylistService playlistService;
 	
 	@RequestMapping(method = RequestMethod.GET, value = "/getUsers")
-	public ResponseEntity<List<User>> getAllUsers() {
+	public ResponseDTO<List<User>> getAllUsers() {
 		
 		List<User> users = userService.getAllUsers();
 		
-		return new ResponseEntity<List<User>>(0, Constants.SUCCESS, users );
+		return new ResponseDTO<List<User>>(0, Constants.SUCCESS, users );
 	}
 	
 	
 	@RequestMapping(method = RequestMethod.POST, value = "/login")
-	public ResponseEntity<UserInfo> login(@RequestBody UserInfo user) {
-		ResponseEntity<UserInfo> response = new ResponseEntity<UserInfo>(Constants.ERROR_CODE,
+	public ResponseDTO<UserInfo> login(@RequestBody UserInfo user) {
+		ResponseDTO<UserInfo> response = new ResponseDTO<UserInfo>(Constants.ERROR_CODE,
 				"");
 		User userNeedToCheck = new User();
 		userNeedToCheck.setUserId(user.getUserId());
@@ -61,8 +62,8 @@ public class UserController {
 	}
 	
 	@RequestMapping(method = RequestMethod.POST, value = "/getUserInfor")
-	public ResponseEntity<ChannelInfo> getUserInfo(@RequestBody AuthDTO auth) {
-		ResponseEntity<ChannelInfo> response = new ResponseEntity<ChannelInfo>(Constants.ERROR_CODE,
+	public ResponseDTO<ChannelInfo> getUserInfo(@RequestBody AuthDTO auth) {
+		ResponseDTO<ChannelInfo> response = new ResponseDTO<ChannelInfo>(Constants.ERROR_CODE,
 				"");	
 		try {
 			ChannelInfo channelInfo = playlistService.getChannelInfor(auth);

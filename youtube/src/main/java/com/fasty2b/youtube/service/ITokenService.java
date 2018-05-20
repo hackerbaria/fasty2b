@@ -6,7 +6,7 @@ import com.fasty2b.youtube.entity.Token;
 
 public interface ITokenService {
      List<Token> getAllTokens();
-     Token getTokenByUserId(String userId);
+     Token getTokenByChannelId(String channelId);
      boolean addToken(Token token);
      void updateToken(Token token);
      void deleteToken(String userId);

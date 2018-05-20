@@ -21,8 +21,8 @@ public class TokenService implements ITokenService {
 	}
 
 	@Override
-	public Token getTokenByUserId(String userId) {		
-		return tokenRepository.findByUserId(userId);		
+	public Token getTokenByChannelId(String channelId) {		
+		return tokenRepository.findByChannelId(channelId);		
 	}
 
 	@Override
@@ -38,8 +38,8 @@ public class TokenService implements ITokenService {
 	}
 
 	@Override
-	public void deleteToken(String userId) {
-		tokenRepository.delete(getTokenByUserId(userId));
+	public void deleteToken(String channelId) {
+		tokenRepository.delete(getTokenByChannelId(channelId));
 		
 	}
 
@@ -51,14 +51,14 @@ public class TokenService implements ITokenService {
 	@Override
 	public boolean updateTokenByAccessToken(String accessToken, String channelId) {
 		Token token = findByAccessToken(accessToken);
-		token.setUserId(channelId);
+		token.setChannelId(channelId);
 		tokenRepository.save(token);
 		return true;
 	}
 
 	@Override
 	public boolean updateTokenByUserId(Token token) {
-		Token tokenDb = getTokenByUserId(token.getUserId());
+		Token tokenDb = getTokenByChannelId(token.getChannelId());
 		tokenDb.setAccessToken(token.getAccessToken());
 		tokenDb.setRefreshToken(token.getRefreshToken());
 		tokenRepository.save(tokenDb);

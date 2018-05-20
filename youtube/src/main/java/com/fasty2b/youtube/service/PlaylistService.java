@@ -37,6 +37,25 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
+import com.fasty2b.youtube.dto.AccessTokenInfo;
+import com.fasty2b.youtube.dto.AuthDTO;
+import com.fasty2b.youtube.dto.Channel;
+import com.fasty2b.youtube.dto.ChannelInfo;
+import com.fasty2b.youtube.dto.ChannelResponse;
+import com.fasty2b.youtube.dto.DescriptionSetting;
+import com.fasty2b.youtube.dto.GeneralSetting;
+import com.fasty2b.youtube.dto.InsertVideoSetting;
+import com.fasty2b.youtube.dto.PlayList;
+import com.fasty2b.youtube.dto.PlayListInfoDTO;
+import com.fasty2b.youtube.dto.RefreshToken;
+import com.fasty2b.youtube.dto.SearchVideoSetting;
+import com.fasty2b.youtube.dto.TitleSetting;
+import com.fasty2b.youtube.dto.VideoInfo;
+import com.fasty2b.youtube.entity.ChannelBasicInfo;
+import com.fasty2b.youtube.entity.Token;
+import com.fasty2b.youtube.entity.User;
+import com.fasty2b.youtube.utils.Auth;
+import com.fasty2b.youtube.utils.Constants;
 import com.google.api.client.auth.oauth2.TokenResponseException;
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeTokenRequest;
 import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
@@ -55,23 +74,6 @@ import com.google.api.services.youtube.model.PlaylistSnippet;
 import com.google.api.services.youtube.model.PlaylistStatus;
 import com.google.api.services.youtube.model.ResourceId;
 import com.google.common.collect.Lists;
-import com.fasty2b.youtube.controller.ChannelInfo;
-import com.fasty2b.youtube.dto.AccessTokenInfo;
-import com.fasty2b.youtube.dto.AuthDTO;
-import com.fasty2b.youtube.dto.Channel;
-import com.fasty2b.youtube.dto.ChannelResponse;
-import com.fasty2b.youtube.dto.DescriptionSetting;
-import com.fasty2b.youtube.dto.GeneralSetting;
-import com.fasty2b.youtube.dto.InsertVideoSetting;
-import com.fasty2b.youtube.dto.PlayList;
-import com.fasty2b.youtube.dto.RefreshToken;
-import com.fasty2b.youtube.dto.SearchVideoSetting;
-import com.fasty2b.youtube.dto.TitleSetting;
-import com.fasty2b.youtube.entity.PlayListInfoEntity;
-import com.fasty2b.youtube.entity.Token;
-import com.fasty2b.youtube.entity.VideoInfo;
-import com.fasty2b.youtube.utils.Auth;
-import com.fasty2b.youtube.utils.Constants;
 
 /**
  * Creates a new, private playlist in the authorized user's channel and add a
@@ -82,9 +84,9 @@ import com.fasty2b.youtube.utils.Constants;
 @Service
 public class PlaylistService {
 
-	//private static final String REDIRECT_URI = "http://fasty2b.com:8080/autoplaylist/dashboard";
+	private static final String REDIRECT_URI = "http://fasty2b.com:8080/autoplaylist/dashboard";
 
-	private static final String REDIRECT_URI = "http://localhost:8080/callback";
+	//private static final String REDIRECT_URI = "http://localhost:8080/callback";
 
 	// private static final String REDIRECT_URI =
 	// "http://localhost:8080/autoplaylist/callback";
@@ -108,13 +110,20 @@ public class PlaylistService {
 
 	@Autowired
 	private SearchService searchService;
+	
+	@Autowired
+	private IChannelBasicInfoService channelBasicInfoService;
+	
+	
+	@Autowired
+	private IUserService userService;
 
-	public PlayListInfoEntity createPlayListAndAddVideos(PlayListInfoEntity playlistInfo,
+	public PlayListInfoDTO createPlayListAndAddVideos(PlayListInfoDTO playlistInfo,
 			SearchVideoSetting searchSetting, TitleSetting titleSetting, DescriptionSetting descriptionSetting,
 			GeneralSetting generalSetting, InsertVideoSetting insertVideoSetting)
 			throws GoogleJsonResponseException, IOException, Exception, Throwable {
 		// search Video
-		com.fasty2b.youtube.entity.ResponseEntity<List<VideoInfo>> videoInfosResponse = searchService
+		com.fasty2b.youtube.dto.ResponseDTO<List<VideoInfo>> videoInfosResponse = searchService
 				.searchVideo(playlistInfo.getTitle(), searchSetting);
 		List<VideoInfo> VideoInfoEntities = videoInfosResponse.getData();
 
@@ -216,7 +225,7 @@ public class PlaylistService {
 		playlistInfo.setTitle(playListName);
 		playlistInfo.setDescription(description);
 
-		PlayListInfoEntity addingPlaylistResult = addPlayList(playlistInfo);
+		PlayListInfoDTO addingPlaylistResult = addPlayList(playlistInfo);
 		if (addingPlaylistResult == null) {
 			return null;
 		} else {
@@ -273,7 +282,7 @@ public class PlaylistService {
 	 * @param args
 	 *            command line args (not used).
 	 */
-	public PlayListInfoEntity addPlayList(PlayListInfoEntity playListInfo)
+	public PlayListInfoDTO addPlayList(PlayListInfoDTO playListInfo)
 			throws GoogleJsonResponseException, IOException, Throwable {
 
 		Properties properties = new Properties();
@@ -298,7 +307,7 @@ public class PlaylistService {
 		youtube = new YouTube.Builder(Auth.HTTP_TRANSPORT, Auth.JSON_FACTORY, credential)
 				.setApplicationName("youtubetool").build();
 
-		PlayListInfoEntity playListInfoEntity = insertPlaylist(playListName, description, privacyStatus);
+		PlayListInfoDTO playListInfoEntity = insertPlaylist(playListName, description, privacyStatus);
 
 		return playListInfoEntity;
 
@@ -321,21 +330,13 @@ public class PlaylistService {
 		// set channelID
 		channelInfor.setChannelId(channel.getId());
 		// delete the old token by User
-		Token tokenDb = tokenService.getTokenByUserId(channel.getId());
+		Token tokenDb = tokenService.getTokenByChannelId(channel.getId());
 
 		Token newToken = new Token();
 		newToken.setAccessToken(accessToken);
 		newToken.setRefreshToken(createdToken.getRefreshToken());
-		newToken.setUserId(channel.getId());
-		if (tokenDb != null) {
-			// update the existed token with new access token and refresh token
-			newToken.setId(tokenDb.getId());
-			tokenService.updateToken(newToken);
-		} else {
-			// insert new Channel Id
-			tokenService.addToken(newToken);
-		}
-
+		newToken.setChannelId(channel.getId());
+		
 		PlaylistListResponse playlistListResponse = getPlaylistsListByChannelId(channel.getId(), new Long(10));
 
 		if (playlistListResponse != null) {
@@ -352,6 +353,28 @@ public class PlaylistService {
 			}
 			channelInfor.setPlayList(convertPlaylistListResponsetoPlayList(playlistListResponse));
 		}
+
+		
+		if (tokenDb != null) {
+			// update the existed token with new access token and refresh token
+			newToken.setId(tokenDb.getId());
+			tokenService.updateToken(newToken);
+		} else {
+			// insert new Channel Id
+			tokenService.addToken(newToken);
+			// also all into channel basic infor table
+			ChannelBasicInfo channelBasicInfo = new ChannelBasicInfo();
+			channelBasicInfo.setChannelId(channel.getId());
+			channelBasicInfo.setChannelName(channelInfor.getChannelTitle());
+			
+			if(!StringUtils.isEmpty(auth.getUserId())) {
+				User user = userService.getUserByUserId(auth.getUserId());				
+				channelBasicInfo.setUser(user);
+			}
+			channelBasicInfoService.addChannel(channelBasicInfo);
+			
+		}
+
 		return channelInfor;
 	}
 
@@ -442,7 +465,7 @@ public class PlaylistService {
 		GoogleCredential credential = new GoogleCredential();
 		Token token = null;
 		if (StringUtils.isNoneBlank(channelId)) {
-			token = tokenService.getTokenByUserId(channelId);
+			token = tokenService.getTokenByChannelId(channelId);
 		}
 
 		if (token == null) {
@@ -488,7 +511,7 @@ public class PlaylistService {
 	/**
 	 * Create a playlist and add it to the authorized account.
 	 */
-	private static PlayListInfoEntity insertPlaylist(String title, String description, String privacyStatus)
+	private static PlayListInfoDTO insertPlaylist(String title, String description, String privacyStatus)
 			throws IOException {
 		// String title, String description
 
@@ -513,7 +536,7 @@ public class PlaylistService {
 		YouTube.Playlists.Insert playlistInsertCommand = youtube.playlists().insert("snippet,status", youTubePlaylist);
 		Playlist playlistInfo = playlistInsertCommand.execute();
 
-		return new PlayListInfoEntity(playlistInfo.getId(), playlistInfo.getSnippet().getTitle(),
+		return new PlayListInfoDTO(playlistInfo.getId(), playlistInfo.getSnippet().getTitle(),
 				playlistInfo.getStatus().getPrivacyStatus(), playlistInfo.getSnippet().getDescription(),
 				playlistInfo.getSnippet().getPublishedAt(), playlistInfo.getSnippet().getChannelId());
 
@@ -528,7 +551,7 @@ public class PlaylistService {
 	 * @param videoId
 	 *            YouTube video id to add to playlistitem
 	 */
-	public PlayListInfoEntity insertPlaylistItem(String playlistId, String videoId) throws IOException {
+	public PlayListInfoDTO insertPlaylistItem(String playlistId, String videoId) throws IOException {
 
 		// Define a resourceId that identifies the video being added to the
 		// playlist.
@@ -555,7 +578,7 @@ public class PlaylistService {
 
 		playlistItemsInsertCommand = youtube.playlistItems().insert("snippet,contentDetails", playlistItem);
 		PlaylistItem returnedPlaylistItem = playlistItemsInsertCommand.execute();
-		PlayListInfoEntity playListInfoEntity = new PlayListInfoEntity(returnedPlaylistItem.getId(),
+		PlayListInfoDTO playListInfoEntity = new PlayListInfoDTO(returnedPlaylistItem.getId(),
 				returnedPlaylistItem.getSnippet().getTitle(), null, returnedPlaylistItem.getSnippet().getDescription(),
 				returnedPlaylistItem.getSnippet().getPublishedAt(), returnedPlaylistItem.getSnippet().getChannelId());
 
@@ -572,7 +595,7 @@ public class PlaylistService {
 	 * @param position
 	 * @return
 	 */
-	public PlayListInfoEntity insertVideoIntoPlaylist(String playlistId, String videoId, Long position)
+	public PlayListInfoDTO insertVideoIntoPlaylist(String playlistId, String videoId, Long position)
 			throws IOException {
 
 		// Define a resourceId that identifies the video being added to the
@@ -595,7 +618,7 @@ public class PlaylistService {
 				.insert(parameters.get("part").toString(), playlistItem);
 
 		PlaylistItem returnedPlaylistItem = playlistItemsInsertRequest.execute();
-		PlayListInfoEntity playListInfoEntity = new PlayListInfoEntity(returnedPlaylistItem.getId(),
+		PlayListInfoDTO playListInfoEntity = new PlayListInfoDTO(returnedPlaylistItem.getId(),
 				returnedPlaylistItem.getSnippet().getTitle(), null, returnedPlaylistItem.getSnippet().getDescription(),
 				returnedPlaylistItem.getSnippet().getPublishedAt(), returnedPlaylistItem.getSnippet().getChannelId());
 

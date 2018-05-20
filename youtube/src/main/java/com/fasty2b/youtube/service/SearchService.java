@@ -36,9 +36,9 @@ import com.google.api.services.youtube.model.ResourceId;
 import com.google.api.services.youtube.model.SearchListResponse;
 import com.google.api.services.youtube.model.SearchResult;
 import com.google.api.services.youtube.model.Thumbnail;
+import com.fasty2b.youtube.dto.ResponseDTO;
 import com.fasty2b.youtube.dto.SearchVideoSetting;
-import com.fasty2b.youtube.entity.ResponseEntity;
-import com.fasty2b.youtube.entity.VideoInfo;
+import com.fasty2b.youtube.dto.VideoInfo;
 import com.fasty2b.youtube.utils.Auth;
 import com.fasty2b.youtube.utils.Constants;
 
@@ -70,7 +70,7 @@ public class SearchService {
      *
      * @param args command line args.
      */
-    public ResponseEntity<List<VideoInfo>> searchVideo(String videoName, SearchVideoSetting setting) {
+    public ResponseDTO<List<VideoInfo>> searchVideo(String videoName, SearchVideoSetting setting) {
         // Read the developer key from the properties file.
         Properties properties = new Properties();
         try {
@@ -78,7 +78,7 @@ public class SearchService {
             properties.load(in);
 
         } catch (IOException e) {
-            return new ResponseEntity<>(Constants.ERROR_CODE, "There was an error reading " + PROPERTIES_FILENAME + ": " + e.getCause()
+            return new ResponseDTO<>(Constants.ERROR_CODE, "There was an error reading " + PROPERTIES_FILENAME + ": " + e.getCause()
             + " : " + e.getMessage());
         }
 
@@ -157,17 +157,17 @@ public class SearchService {
             SearchListResponse searchResponse = search.execute();
             List<SearchResult> searchResultList = searchResponse.getItems();
             if (searchResultList != null) {
-            	return new ResponseEntity<List<VideoInfo>>(0, Constants.SUCCESS, getVideoInfos(searchResultList.iterator(), videoName));
+            	return new ResponseDTO<List<VideoInfo>>(0, Constants.SUCCESS, getVideoInfos(searchResultList.iterator(), videoName));
             } else {
-            	return new ResponseEntity<List<VideoInfo>>(0, Constants.SUCCESS, new ArrayList<VideoInfo>());
+            	return new ResponseDTO<List<VideoInfo>>(0, Constants.SUCCESS, new ArrayList<VideoInfo>());
             }
         } catch (GoogleJsonResponseException e) {
-            return new ResponseEntity<List<VideoInfo>>(Constants.ERROR_CODE, "There was a service error: " + e.getDetails().getCode() + " : "
+            return new ResponseDTO<List<VideoInfo>>(Constants.ERROR_CODE, "There was a service error: " + e.getDetails().getCode() + " : "
                     + e.getDetails().getMessage());
         } catch (IOException e) {
-            return new ResponseEntity<List<VideoInfo>>(Constants.ERROR_CODE, "There was an IO error: " + e.getCause() + " : " + e.getMessage());
+            return new ResponseDTO<List<VideoInfo>>(Constants.ERROR_CODE, "There was an IO error: " + e.getCause() + " : " + e.getMessage());
         } catch (Throwable t) {
-        	return new ResponseEntity<List<VideoInfo>>(Constants.ERROR_CODE, "There was an IO error: " + t.getCause() + " : " + t.getMessage());
+        	return new ResponseDTO<List<VideoInfo>>(Constants.ERROR_CODE, "There was an IO error: " + t.getCause() + " : " + t.getMessage());
         }
     }
 

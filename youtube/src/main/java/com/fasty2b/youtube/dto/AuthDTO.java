@@ -10,8 +10,9 @@ public class AuthDTO implements Serializable {
 	private static final long serialVersionUID = 1L;
 	private String authCode;
 	
-	public AuthDTO() {
-		// TODO Auto-generated constructor stub
+	private String userId;
+	
+	public AuthDTO() {		
 	}
 
 	public String getAuthCode() {
@@ -21,6 +22,24 @@ public class AuthDTO implements Serializable {
 	public void setAuthCode(String authCode) {
 		this.authCode = authCode;
 	}
+
+	
+
+	public String getUserId() {
+		return userId;
+	}
+
+	public void setUserId(String userId) {
+		this.userId = userId;
+	}
+
+	@Override
+	public String toString() {
+		return "AuthDTO [authCode=" + authCode + ", userId=" + userId + "]";
+	}
+
+	
+	
 	
 	
 	
